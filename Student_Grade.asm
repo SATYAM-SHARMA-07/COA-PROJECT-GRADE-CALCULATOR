@@ -1,0 +1,195 @@
+
+.MODEL SMALL
+.STACK 100H
+
+.DATA
+    MSG1 DB 10,13,'ENTER MARKS OF SUBJECT 1 (0-100): $'
+    MSG2 DB 10,13,'ENTER MARKS OF SUBJECT 2 (0-100): $'
+    MSG3 DB 10,13,'ENTER MARKS OF SUBJECT 3 (0-100): $'
+
+    MSG4 DB 10,13,'TOTAL MARKS: $'
+    MSG5 DB 10,13,'AVERAGE: $'
+    MSG6 DB 10,13,'GRADE: $'
+
+    D DB 'DISTINCTION$'
+    F DB 'FIRST CLASS$'
+    S DB 'SECOND CLASS$'
+    X DB 'FAIL$'
+
+    M1 DW ?
+    M2 DW ?
+    M3 DW ?
+    TOTAL DW ?
+    AVG DW ?
+
+.CODE
+
+MAIN PROC
+    MOV AX, @DATA
+    MOV DS, AX
+
+    ; INPUT SUBJECT 1
+    LEA DX, MSG1
+    MOV AH, 09H
+    INT 21H
+
+    CALL READNUM
+    MOV M1, AX
+
+    ; INPUT SUBJECT 2
+    LEA DX, MSG2
+    MOV AH, 09H
+    INT 21H
+
+    CALL READNUM
+    MOV M2, AX
+
+    ; INPUT SUBJECT 3
+    LEA DX, MSG3
+    MOV AH, 09H
+    INT 21H
+
+    CALL READNUM
+    MOV M3, AX
+
+    ; CALCULATE TOTAL
+    MOV AX, M1
+    ADD AX, M2
+    ADD AX, M3
+    MOV TOTAL, AX
+
+    ; CALCULATE AVERAGE
+    MOV DX, 0
+    MOV BX, 3
+    DIV BX
+    MOV AVG, AX
+
+    ; DISPLAY TOTAL
+    LEA DX, MSG4
+    MOV AH, 09H
+    INT 21H
+
+    MOV AX, TOTAL
+    CALL DISPLAY
+
+    ; DISPLAY AVERAGE
+    LEA DX, MSG5
+    MOV AH, 09H
+    INT 21H
+
+    MOV AX, AVG
+    CALL DISPLAY
+
+    ; GRADE CLASSIFICATION
+    LEA DX, MSG6
+    MOV AH, 09H
+    INT 21H
+
+    MOV AX, TOTAL
+
+    CMP AX, 225
+    JAE DISTINCTION
+
+    CMP AX, 180
+    JAE FIRST
+
+    CMP AX, 150
+    JAE SECOND
+
+    JMP FAIL
+
+DISTINCTION:
+    LEA DX, D
+    JMP PRINT
+
+FIRST:
+    LEA DX, F
+    JMP PRINT
+
+SECOND:
+    LEA DX, S
+    JMP PRINT
+
+FAIL:
+    LEA DX, X
+
+PRINT:
+    MOV AH, 09H
+    INT 21H
+
+    MOV AH, 4CH
+    INT 21H
+
+MAIN ENDP
+
+; READ MULTI-DIGIT NUMBER
+
+READNUM PROC
+
+    XOR BX, BX
+
+INPUT:
+    MOV AH, 01H
+    INT 21H
+
+    CMP AL, 0DH
+    JE DONE
+
+    CMP AL, '0'
+    JB INPUT
+
+    CMP AL, '9'
+    JA INPUT
+
+    SUB AL, 30H
+
+    MOV CL, AL
+    MOV AX, BX
+    MOV DX, 10
+    MUL DX
+
+    XOR CH, CH
+    ADD AX, CX
+
+    MOV BX, AX
+
+    JMP INPUT
+
+DONE:
+    MOV AX, BX
+    RET
+
+READNUM ENDP
+
+; DISPLAY NUMBER
+
+DISPLAY PROC
+
+    MOV BX, 10
+    MOV CX, 0
+
+L1:
+    MOV DX, 0
+    DIV BX
+
+    PUSH DX
+    INC CX
+
+    CMP AX, 0
+    JNE L1
+
+L2:
+    POP DX
+    ADD DL, 30H
+
+    MOV AH, 02H
+    INT 21H
+
+    LOOP L2
+
+    RET
+
+DISPLAY ENDP
+
+END MAIN
+ 
